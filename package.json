@@ -1,5 +1,6 @@
 {
   "name": "plp-pdf-literature-processor",
+  "publisher": "hungchunchang",
   "repository": {
     "type": "git",
     "url": "https://github.com/hungchunchang/plp"
@@ -81,6 +82,11 @@
             "type": "string", 
             "default": "",
             "description": "OpenAI API Key"
+          },
+          "pdfProcessor.pythonPath": {
+            "type": "string", 
+            "default": "python",
+            "description": "Python executable path"
           }
         }
      }

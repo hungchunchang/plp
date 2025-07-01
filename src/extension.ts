@@ -136,25 +136,41 @@ async function processPDF(pdfPath: string, outputPath: string, context: vscode.E
 	outputPath = path.resolve(outputPath);
 
 	const args = [
-        pythonScript,
-        pdfPath,
-        '-o', outputPath
-    ];
+		pythonScript,
+		pdfPath,
+		'-o', outputPath
+	];
     
     if (apiKey) args.push('-k', apiKey);
     if (templatePath) args.push('-t', templatePath);
+	const pythonPath = config.get<string>('pythonPath') || 'python';
+	console.log('Using Python:', pythonPath);
+	console.log('Args:', args);
+	console.log('Working directory:', process.cwd());
     
     return new Promise<void>((resolve, reject) => {
-        const process = spawn('python', args);
+
+		console.log('Using Python:', pythonPath);
+		console.log('Args:', args);
+    	const process = spawn(pythonPath, args, {
+    cwd: context.extensionPath
+});
         
         process.stdout.on('data', (data) => {
-			const message = data.toString().trim();
-			if (message.startsWith('INFO:')) {
-				vscode.window.showInformationMessage(message.replace('INFO:', ''));
-			} else if (message.startsWith('ERROR:')) {
-				vscode.window.showErrorMessage(message.replace('ERROR:', ''));
-			}
-		});
+		const message = data.toString().trim();
+		console.log('STDOUT:', message);
+		if (message.startsWith('INFO:')) {
+			vscode.window.showInformationMessage(message.replace('INFO:', '').trim());
+		} else if (message.startsWith('ERROR:')) {
+			vscode.window.showErrorMessage(message.replace('ERROR:', '').trim());
+		}
+	});
+
+	process.stderr.on('data', (data) => {
+		const errorMsg = data.toString().trim();
+		console.log('STDERR:', errorMsg);
+		vscode.window.showErrorMessage(`Python Error: ${errorMsg}`);
+	});
         
         process.on('close', (code) => {
             if (code === 0) {
