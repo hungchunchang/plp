@@ -1,5 +1,9 @@
 {
   "name": "plp-pdf-literature-processor",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hungchunchang/plp"
+  },
   "displayName": "pLp: PDF Literature Processor",
   "description": "process pdf file to literature review note",
   "version": "0.0.1",

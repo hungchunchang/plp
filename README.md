@@ -83,4 +83,4 @@ MIT
 
 ## Contributing
 
-Report issues and feature requests on GitHub.
+Report issues and feature requests on [GitHub](https://github.com/hungchunchang/plp)
