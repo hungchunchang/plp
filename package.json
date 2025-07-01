@@ -1,0 +1,103 @@
+{
+  "name": "plp-pdf-literature-processor",
+  "displayName": "pLp: PDF Literature Processor",
+  "description": "process pdf file to literature review note",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.101.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "pdfProcessor.processFile",
+        "title": "Process Single PDF",
+        "category": "PDF Processor"
+      },
+      {
+        "command": "pdfProcessor.processFolder", 
+        "title": "Process PDF Folder",
+        "category": "PDF Processor"
+      },
+      {
+        "command": "pdfProcessor.selectOutputPath",
+        "title": "PDF Processor: Select Output Directory"
+      },
+      {
+        "command": "pdfProcessor.selectBibtexPath", 
+        "title": "PDF Processor: Select Bibtex File"
+      },
+      {
+        "command": "pdfProcessor.selectTemplatePath",
+        "title": "PDF Processor: Select Template File"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "pdfProcessor.processFile",
+          "when": "resourceExtname == .pdf",
+          "group": "navigation"
+        },
+        {
+          "command": "pdfProcessor.processFolder",
+          "when": "explorerResourceIsFolder",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "PDF Processor",
+        "properties": {
+          "pdfProcessor.outputPath": {
+            "type": "string",
+            "default": "~/Downolads/PDF_Output",
+            "description": "Default output directory for processed files"
+          },
+          "pdfProcessor.bibtexPath": {
+            "type": "string",
+            "default": "~/Downolads/bibtexPath.bib",
+            "description": "Default output directory for bibtex"
+          },
+          "pdfProcessor.templatePath": {
+            "type": "string",
+            "default": "~/Downolads/template.md",
+            "description": "Default output directory for template"
+          },
+          "pdfProcessor.validateWritePermission": {
+            "type": "boolean",
+            "default": true,
+            "description": "Validate write permissions before processing"
+          },
+          "pdfProcessor.openaiApiKey": {
+            "type": "string", 
+            "default": "",
+            "description": "OpenAI API Key"
+          }
+        }
+     }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.101.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "20.x",
+    "@typescript-eslint/eslint-plugin": "^8.31.1",
+    "@typescript-eslint/parser": "^8.31.1",
+    "eslint": "^9.25.1",
+    "typescript": "^5.8.3",
+    "@vscode/test-cli": "^0.0.10",
+    "@vscode/test-electron": "^2.5.2"
+  }
+}
