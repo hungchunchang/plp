@@ -7,7 +7,7 @@
   },
   "displayName": "pLp: PDF Literature Processor",
   "description": "process pdf file to literature review note",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "engines": {
     "vscode": "^1.101.0"
   },

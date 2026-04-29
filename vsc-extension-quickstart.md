@@ -1,5 +1,12 @@
 # Welcome to your VS Code Extension
 
+## Complie
+
+```shell
+# cd to project route
+vsce package
+```
+
 ## What's in the folder
 
 * This folder contains all of the files necessary for your extension.

@@ -16,6 +16,11 @@ A VS Code extension that automatically processes PDF literature files into organ
 2. Open VS Code
 3. Go to Extensions → "..." → Install from VSIX
 4. Select the downloaded file
+5. install
+   1. openai
+   2. pypdf
+   3. python-dotenv
+   4. requests
 
 ## Usage
 

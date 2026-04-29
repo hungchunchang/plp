@@ -2,6 +2,8 @@
 """
 PDF文獻自動化處理工具
 自動將PDF文獻轉換為規範命名的文件，並生成對應的Markdown筆記
+- 特殊字元應該normalize而不是刪掉
+- 有些年份會錯
 """
 
 import os
@@ -46,6 +48,8 @@ class PDFProcessor:
     def extract_text_from_pdf(self, pdf_path: str) -> str:
         """從PDF文件中提取文本"""
         try:
+            # 確保使用絕對路徑
+            pdf_path = os.path.abspath(pdf_path)
             reader = PdfReader(pdf_path)
             text = ""
             # 只讀取前3頁來減少token使用量
@@ -73,6 +77,8 @@ class PDFProcessor:
             return "Failed to extract title (no API key)"
         
         try:
+            # 確保使用絕對路徑
+            file_path = os.path.abspath(file_path)
             reader = PdfReader(file_path)
             page = reader.pages[0]
             text = page.extract_text()[:500]
@@ -246,7 +252,8 @@ class BibtexSearcher:
 
 class MarkdownGenerator:
     def __init__(self, template_path: str = None):
-        self.template_path = template_path
+        # 如果提供了模板路徑，轉換為絕對路徑
+        self.template_path = os.path.abspath(template_path) if template_path else None
     
     def form_template(self, bibtex: str = "", title: str = "") -> str:
         """生成Markdown模板"""
@@ -322,6 +329,10 @@ class LiteratureProcessor:
     def process_pdf(self, pdf_path: str, output_dir: str = ".", bibtex_path: str = "reference.bib") -> bool:
         """處理單個PDF文件"""
         try:
+            # 確保使用絕對路徑
+            pdf_path = os.path.abspath(pdf_path)
+            output_dir = os.path.abspath(output_dir)
+            
             # 1. 提取文字
             content = self.pdf_processor.extract_text_from_pdf(pdf_path)
             if not content:
@@ -352,26 +363,35 @@ class LiteratureProcessor:
             bibtex, new_key, title = self.bibtex_searcher.customize_bibtex_key(bibtex)
             formatted_bibtex = self.bibtex_searcher.format_bibtex(bibtex)
             
-            # 5. 寫入reference.bib
+            # 5. 寫入reference.bib（使用絕對路徑）
             try:
                 os.makedirs(output_dir, exist_ok=True)
-                bib_path = os.path.join(output_dir, bibtex_path)
+                # 如果 bibtex_path 是絕對路徑，直接使用；否則與 output_dir 結合
+                if os.path.isabs(bibtex_path):
+                    bib_path = bibtex_path
+                else:
+                    bib_path = os.path.join(output_dir, bibtex_path)
+                
+                # 確保 bibtex 文件的目錄存在
+                os.makedirs(os.path.dirname(bib_path), exist_ok=True)
+                
                 with open(bib_path, "a", encoding='utf-8') as f:
                     f.write(formatted_bibtex + '\n')
             except Exception as e:
                 logging.error(f"Failed to write BibTeX file: {e}")
                 return False
             
-            # 6. 生成Markdown文件
+            # 6. 生成Markdown文件（使用絕對路徑）
             try:
                 template = self.markdown_generator.form_template(formatted_bibtex, title)
-                with open(os.path.join(output_dir, f"{new_key}.md"), "w", encoding='utf-8') as f:
+                md_output_path = os.path.join(output_dir, f"{new_key}.md")
+                with open(md_output_path, "w", encoding='utf-8') as f:
                     f.write(template)
             except Exception as e:
                 logging.error(f"Failed to write Markdown file: {e}")
                 return False
             
-            # 7. 重命名PDF文件（在原位置）
+            # 7. 重命名PDF文件（在原位置，使用絕對路徑）
             try:
                 original_dir = os.path.dirname(pdf_path)
                 pdf_name = f"{new_key}.pdf"
@@ -402,15 +422,17 @@ def main():
     
     args = parser.parse_args()
     
-    # 展開用戶路徑
-    args.output = os.path.expanduser(args.output)
+    # 展開並轉換為絕對路徑
+    args.path = os.path.abspath(os.path.expanduser(args.path))
+    args.output = os.path.abspath(os.path.expanduser(args.output))
     if args.template:
-        args.template = os.path.expanduser(args.template)
+        args.template = os.path.abspath(os.path.expanduser(args.template))
     
     # 從環境變量或參數獲取API key
     api_key = args.openai_key or os.getenv("OPENAI_API_KEY")
     processor = LiteratureProcessor(api_key, template_path=args.template)
     
+    # failed_list使用絕對路徑
     failed_list_path = os.path.join(args.output, "failed_list.md")
     failed_files = []
     total = 0
@@ -424,7 +446,10 @@ def main():
             failed = 1
             failed_files.append(os.path.basename(args.path))
     elif os.path.isdir(args.path):
+        # 使用絕對路徑遍歷目錄
         for root, dirs, files in os.walk(args.path):
+            # 將root轉換為絕對路徑
+            root = os.path.abspath(root)
             for file in files:
                 if file.endswith(".pdf"):
                     pdf_path = os.path.join(root, file)
@@ -437,7 +462,7 @@ def main():
         logging.error(f"File or directory not found: {args.path}")
         return
     
-    # 寫入失敗列表
+    # 寫入失敗列表（使用絕對路徑）
     if failed_files:
         try:
             with open(failed_list_path, "w", encoding='utf-8') as f:

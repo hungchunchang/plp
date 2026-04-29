@@ -183,8 +183,82 @@ async function processPDF(pdfPath: string, outputPath: string, context: vscode.E
     });
 }
 
+
 async function processPDFFolder(folderPath: string, outputPath: string, context: vscode.ExtensionContext) {
-    // 類似單文件處理，但傳入文件夾路徑
+    const config = vscode.workspace.getConfiguration('pdfProcessor');
+    const apiKey = config.get<string>('openaiApiKey');
+    const templatePath = config.get<string>('templatePath');
+    const bibtexConfigPath = config.get<string>('bibtexPath');
+    
+    const pythonScript = path.join(context.extensionPath, 'src', 'python', 'pdf_processor.py');
+    
+    if (outputPath.startsWith('~')) {
+        outputPath = outputPath.replace('~', require('os').homedir());
+    }
+    
+    outputPath = path.resolve(outputPath);
+    folderPath = path.resolve(folderPath);
+
+    // 處理 bibtex 路徑：如果配置了完整路徑，就使用完整路徑；否則使用 outputPath + 檔名
+    let finalBibtexPath = bibtexConfigPath || path.join(outputPath, 'reference.bib');
+    finalBibtexPath = path.resolve(finalBibtexPath);
+
+    const args = [
+        pythonScript,
+        folderPath,
+        '-o', outputPath,           // markdown 輸出到這裡
+        '-b', finalBibtexPath       // bibtex 使用完整路徑
+    ];
+    
+    if (apiKey) args.push('-k', apiKey);
+    if (templatePath) args.push('-t', templatePath);
+    
+    const pythonPath = config.get<string>('pythonPath') || 'python3';
+    console.log('Processing folder:', folderPath);
+    console.log('Using Python:', pythonPath);
+    console.log('Args:', args);
+    
+    return new Promise<void>((resolve, reject) => {
+        const process = spawn(pythonPath, args, {
+            cwd: context.extensionPath
+        });
+        
+        let hasError = false;
+        
+        process.stdout.on('data', (data) => {
+            const message = data.toString().trim();
+            console.log('STDOUT:', message);
+            if (message.startsWith('INFO:')) {
+                vscode.window.showInformationMessage(message.replace('INFO:', '').trim());
+            } else if (message.startsWith('ERROR:')) {
+                hasError = true;
+                vscode.window.showErrorMessage(message.replace('ERROR:', '').trim());
+            }
+        });
+
+        process.stderr.on('data', (data) => {
+            const errorMsg = data.toString().trim();
+            console.log('STDERR:', errorMsg);
+            // 忽略一些 Python 的 warning
+            if (!errorMsg.includes('UserWarning') && !errorMsg.includes('DeprecationWarning')) {
+                hasError = true;
+                vscode.window.showErrorMessage(`Python Error: ${errorMsg}`);
+            }
+        });
+        
+        process.on('close', (code) => {
+            if (code === 0 && !hasError) {
+                vscode.window.showInformationMessage('Folder processed successfully!');
+                resolve();
+            } else {
+                reject(new Error(`Process failed with code ${code}`));
+            }
+        });
+
+        process.on('error', (err) => {
+            reject(new Error(`Failed to start Python process: ${err.message}`));
+        });
+    });
 }
 
 export function deactivate() {}
